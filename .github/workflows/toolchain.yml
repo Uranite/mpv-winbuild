@@ -12,17 +12,15 @@ on:
         default: "all-64bit"
         type: choice
         options:
-        - 32bit
         - 64bit
+        - aarch64
         - 64bit-v3
         - all-64bit
-        - all
       compiler:
         required: false
         default: "clang"
         type: choice
         options:
-        - gcc
         - clang
       no_save_cache:
         description: "Don't save caches after success build"
@@ -37,7 +35,7 @@ on:
       release:
         description: "Publish a release"
         required: false
-        default: false
+        default: true
         type: boolean
       run_name:
         description: 'The name displayed in the list of workflow runs'
@@ -57,8 +55,8 @@ jobs:
             let matrix = {};
             let build_target = "${{ inputs.build_target }}"
             switch ( build_target ) {
-              case "32bit":
-                matrix.bit = ["32"];
+              case "aarch64":
+                matrix.bit = ["aarch64"];
                 break;
               case "64bit":
                 matrix.bit = ["64"];
@@ -67,10 +65,7 @@ jobs:
                 matrix.bit = ["64-v3"];
                 break;
               case "all-64bit":
-                matrix.bit = ["64","64-v3"];
-                break;
-              case "all":
-                matrix.bit = ["32","64","64-v3"];
+                matrix.bit = ["aarch64","64-v3"];
                 break;
               default:
                 matrix.bit = ["64","64-v3"];
@@ -88,7 +83,7 @@ jobs:
     needs: [params]
     runs-on: ubuntu-latest
     container:
-      image: archlinux/archlinux:base-devel
+      image: cachyos/cachyos-v3:latest
     continue-on-error: true
     strategy:
       matrix: ${{ fromJson(needs.params.outputs.matrix) }}
@@ -96,9 +91,8 @@ jobs:
     steps:
       - name: Install Dependencies
         run: |
-          sudo echo -e "[multilib]\nInclude = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf
           sudo pacman -Syu --noconfirm
-          sudo pacman -S --noconfirm --needed git ninja cmake meson libc++ wget mimalloc
+          sudo pacman -S --noconfirm --needed base-devel git ninja cmake meson wget mimalloc
           mkdir -p /home/opt/7zip
           wget -qO - https://www.7-zip.org/a/7z2301-linux-x64.tar.xz | tar -xJf - -C /home/opt/7zip 7zzs
           sudo ln -s /home/opt/7zip/7zzs /usr/bin/7z
@@ -112,7 +106,7 @@ jobs:
       - name: Checkout toolchain
         uses: actions/checkout@v4
         with:
-          repository: shinchiro/mpv-winbuild-cmake
+          repository: Andarwinux/mpv-winbuild-cmake
           path: mpv-winbuild-cmake
           fetch-depth: 0
 
@@ -167,12 +161,26 @@ jobs:
         if: ${{ always() }}
         run: |
           sudo 7z a logs.7z $(find mpv-winbuild-cmake -type f -iname "*-*.log" -or -wholename "*/ffbuild/config.log")
+      - name: Packaging clang_root
+        if: ${{ always() }}
+        run: |
+          tar -Jcf ./clang_root_${{ matrix.bit }}.tar.xz --format=ustar --numeric-owner --owner=0 --group=0 --sort=name mpv-winbuild-cmake/clang_root
       - name: upload logs
         uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: ${{ matrix.bit }}_logs
           path: logs.7z
+      - name: "release clang_root"
+        uses: ncipollo/release-action@v1
+        with:
+          prerelease: false
+          artifacts: clang_root_${{ matrix.bit }}.tar.xz
+          replacesArtifacts: true
+          tag: clang_root
+          name: clang_root_${{ matrix.bit }}.tar.xz
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
 
   trigger:

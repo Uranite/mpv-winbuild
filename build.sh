@@ -11,19 +11,16 @@ main() {
     simple_package=$3
 
     prepare
-    if [ "$target" == "32" ]; then
-        package "32" 
-    elif [ "$target" == "64" ]; then
+    if [ "$target" == "64" ]; then
         package "64"
+    elif [ "$target" == "aarch64" ]; then
+        package "aarch64"
     elif [ "$target" == "64-v3" ]; then
         package "64-v3"
     elif [ "$target" == "all-64" ]; then
         package "64"
         package "64-v3"
-    else [ "$target" == "all" ];
-        package "32"
-        package "64"
-        package "64-v3"
+        package "aarch64"
     fi
     rm -rf ./release/mpv-packaging-master
 }
@@ -38,6 +35,9 @@ package() {
         local arch="x86_64"
         local gcc_arch="-DGCC_ARCH=x86-64-v3"
         local x86_64_level="-v3"
+    elif [ $bit == "aarch64" ]; then
+        local arch="aarch64"
+        local gcc_arch="-DGCC_ARCH=cortex-a76"
     fi
 
     build $bit $arch $gcc_arch
@@ -50,13 +50,17 @@ build() {
     local bit=$1
     local arch=$2
     local gcc_arch=$3
-    
+
+    export PATH="/usr/local/fuchsia-clang/bin:$PATH"
+    wget https://github.com/Andarwinux/mpv-winbuild/releases/download/pgo/pgo.profdata
+
     if [ "$compiler" == "clang" ]; then
-        clang_option=(-DCMAKE_INSTALL_PREFIX=$clang_root -DMINGW_INSTALL_PREFIX=$buildroot/build$bit/install/$arch-w64-mingw32 -DCLANG_PACKAGES_LTO=ON)
+        clang_option=(-DCMAKE_INSTALL_PREFIX=$clang_root -DMINGW_INSTALL_PREFIX=$buildroot/build$bit/install/$arch-w64-mingw32 -DLLVM_ENABLE_BOLT=USE -DCLANG_PACKAGES_LTO=ON -DCLANG_PACKAGES_PGO=USE -DCLANG_PACKAGES_PROFDATA_FILE="./pgo.profdata")
     fi
     cmake --fresh -DTARGET_ARCH=$arch-w64-mingw32 $gcc_arch -DCOMPILER_TOOLCHAIN=$compiler "${clang_option[@]}" $extra_option -DENABLE_CCACHE=ON -DSINGLE_SOURCE_LOCATION=$srcdir -DRUSTUP_LOCATION=$buildroot/install_rustup -G Ninja -H$gitdir -B$buildroot/build$bit
 
-    ninja -C $buildroot/build$bit {libzvbi,libopenmpt}-removeprefix || rm -rf $srcdir/{libzvbi,libopenmpt} || true
+    #ninja -C $buildroot/build$bit {libzvbi,libopenmpt}-removeprefix || rm -rf $srcdir/{libzvbi,libopenmpt} || true
+    rm -rf $buildroot/build$bit/cmake/Modules/ExternalProject.cmake*
     ninja -C $buildroot/build$bit download || true
 
     if [ "$compiler" == "gcc" ] && [ ! -f "$buildroot/build$bit/install/bin/cross-gcc" ]; then
@@ -71,8 +75,9 @@ build() {
     fi
     ninja -C $buildroot/build$bit update
     ninja -C $buildroot/build$bit mpv-fullclean
-    
-    ninja -C $buildroot/build$bit mpv
+    ninja -C $buildroot/build$bit download
+
+    ninja -C $buildroot/build$bit mpv mpv-debug-plugin mpv-menu-plugin libmediainfo curl aria2
 
     if [ -n "$(find $buildroot/build$bit -maxdepth 1 -type d -name "mpv*$arch*" -print -quit)" ] ; then
         echo "Successfully compiled $bit-bit. Continue"
