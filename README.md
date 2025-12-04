@@ -6,7 +6,7 @@
 
 Use Github Action to build mpv for Windows with latest commit.
 
-Based on <https://github.com/shinchiro/mpv-winbuild-cmake>.
+Based on <https://github.com/Uranite/mpv-winbuild-cmake>.
 
 ## Auto-Builds
 
@@ -29,7 +29,7 @@ This repo only provides 64-bit version. If you need a 32-bit version, you can fo
 
 ## Information about packages
 
-same as [shinchiro](https://github.com/shinchiro/mpv-winbuild-cmake/blob/master/README.md#information-about-packages) [![](https://img.shields.io/endpoint?url=https%3A%2F%2Flatest-commit-badgen.vercel.app%2Fgithub%2Fshinchiro%2Fmpv-winbuild-cmake&cacheSeconds=1800)](https://github.com/shinchiro/mpv-winbuild-cmake)
+same as [shinchiro](https://github.com/Uranite/mpv-winbuild-cmake/blob/master/README.md#information-about-packages) [![](https://img.shields.io/endpoint?url=https%3A%2F%2Flatest-commit-badgen.vercel.app%2Fgithub%2Fshinchiro%2Fmpv-winbuild-cmake&cacheSeconds=1800)](https://github.com/Uranite/mpv-winbuild-cmake)
 
 -   Git/Hg
     -   amf-headers [![amf-headers](https://img.shields.io/endpoint?url=https%3A%2F%2Flatest-commit-badgen.vercel.app%2Fgithub%2FGPUOpen-LibrariesAndSDKs%2FAMF&cacheSeconds=1800)](https://github.com/GPUOpen-LibrariesAndSDKs/AMF/tree/master/amf/public/include)

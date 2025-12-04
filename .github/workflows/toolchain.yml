@@ -115,7 +115,7 @@ jobs:
       - name: Checkout toolchain
         uses: actions/checkout@v6
         with:
-          repository: shinchiro/mpv-winbuild-cmake
+          repository: Uranite/mpv-winbuild-cmake
           path: mpv-winbuild-cmake
           fetch-depth: 0
 
@@ -195,7 +195,7 @@ jobs:
       - name: Checkout toolchain
         uses: actions/checkout@v6
         with:
-          repository: shinchiro/mpv-winbuild-cmake
+          repository: Uranite/mpv-winbuild-cmake
           path: mpv-winbuild-cmake
           fetch-depth: 0
 
